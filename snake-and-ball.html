@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snake & Ball</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e3b3d;--panel:#14504f;--ink:#f4efe1;--mute:#9cc7c0;--line:#1f6a66;--c1:#1a5c58;--c2:#17524f;--ball:#ff6b5e;--gold:#ffc83d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e6f3ee;--panel:#fff;--ink:#12353a;--mute:#4f7a76;--line:#b9d9d0;--c1:#d5ebe3;--c2:#c8e4da}}
+:root[data-theme="light"]{--bg:#e6f3ee;--panel:#fff;--ink:#12353a;--mute:#4f7a76;--line:#b9d9d0;--c1:#d5ebe3;--c2:#c8e4da}
+:root[data-theme="dark"]{--bg:#0e3b3d;--panel:#14504f;--ink:#f4efe1;--mute:#9cc7c0;--line:#1f6a66;--c1:#1a5c58;--c2:#17524f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Fredoka',ui-rounded,'Trebuchet MS',system-ui,sans-serif;min-height:100vh}
+.app{max-width:520px;margin:0 auto;padding:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+h1{font-size:1.7rem;margin:0;font-weight:700;letter-spacing:-.01em}
+.me{display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:4px 12px 4px 6px;cursor:pointer;color:var(--ink);font:inherit}
+.me b{font-size:1.5rem;line-height:1}
+nav{display:flex;gap:6px;margin-bottom:12px}
+nav button{flex:1;padding:10px;border:2px solid var(--line);background:transparent;color:var(--mute);border-radius:12px;font:600 1rem inherit;font-family:inherit;cursor:pointer}
+nav button[aria-selected=true]{background:var(--gold);border-color:var(--gold);color:#3b2a00}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hud{display:flex;gap:8px;margin-bottom:10px}
+.hud div{flex:1;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:6px 10px}
+.hud small{color:var(--mute);display:block;font-size:.75rem}
+.hud strong{font-size:1.4rem}
+.stage{position:relative;border-radius:16px;overflow:hidden;border:3px solid var(--line);touch-action:none}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:20px;background:rgba(8,40,42,.62);color:#f4efe1}
+.ov.hide{display:none}
+.ov h2{margin:0;font-size:2rem}
+.ov p{margin:0;max-width:28ch;color:#cfe8e2}
+.tag{font-size:.85rem;background:rgba(255,255,255,.14);padding:3px 10px;border-radius:999px}
+.btn{background:var(--gold);color:#3b2a00;border:0;border-radius:999px;padding:12px 28px;font:700 1.15rem inherit;font-family:inherit;cursor:pointer;margin-top:6px}
+.btn:active{transform:scale(.97)}
+.pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,52px);gap:6px;justify-content:center;margin-top:12px}
+.pad button{background:var(--panel);border:2px solid var(--line);color:var(--ink);border-radius:12px;font-size:1.3rem;cursor:pointer}
+.pad .u{grid-column:2}.pad .l{grid-row:2;grid-column:1}.pad .d{grid-row:2;grid-column:2}.pad .r{grid-row:2;grid-column:3}
+.hint{text-align:center;color:var(--mute);font-size:.85rem;margin:10px 0 0}
+section[hidden]{display:none}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:1.15rem}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stats div{background:var(--bg);border-radius:12px;padding:10px}
+.stats small{color:var(--mute);display:block}.stats strong{font-size:1.6rem}
+ol.lb{list-style:none;margin:0;padding:0}
+ol.lb li{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px dashed var(--line)}
+ol.lb li:last-child{border:0}
+ol.lb .rk{width:1.6rem;color:var(--mute)}ol.lb .nm{flex:1}ol.lb .pt{font-weight:700;color:var(--gold)}
+.empty{color:var(--mute);margin:0}
+ol.lb .av{font-size:1.2rem}
+label{display:block;color:var(--mute);font-size:.9rem;margin:12px 0 6px}
+input[type=text]{width:100%;padding:11px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{width:48px;height:48px;border-radius:14px;border:3px solid var(--line);background:var(--bg);font-size:1.6rem;cursor:pointer;padding:0}
+.opts button[aria-pressed=true]{border-color:var(--gold)}
+.opts .sw{border-radius:50%}
+.link{background:none;border:0;color:var(--mute);text-decoration:underline;font:inherit;cursor:pointer;padding:0;margin-top:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Snake &amp; Ball</h1>
+    <button class="me" id="meBtn" aria-label="Open profile"><b id="meAv">🐍</b><span id="meNm">Player</span></button>
+  </header>
+  <nav role="tablist">
+    <button role="tab" data-tab="play" aria-selected="true">Play</button>
+    <button role="tab" data-tab="points" aria-selected="false">Points</button>
+    <button role="tab" data-tab="world" aria-selected="false">World</button>
+    <button role="tab" data-tab="profile" aria-selected="false">Profile</button>
+  </nav>
+
+  <section id="play">
+    <div class="hud">
+      <div><small>Score</small><strong id="sc">0</strong></div>
+      <div><small>Best</small><strong id="bs">0</strong></div>
+      <div><small>Level</small><strong id="lv">1</strong></div>
+    </div>
+    <div class="stage">
+      <canvas id="cv" width="400" height="400"></canvas>
+      <div class="ov" id="ov">
+        <span class="tag" id="ovTag">Live preview</span>
+        <h2 id="ovTitle">Snake &amp; Ball</h2>
+        <p id="ovTxt">Eat the red balls. Walls are open: slip through one edge and come out the other. Catch the gold ball for 5.</p>
+        <button class="btn" id="go">Play</button>
+      </div>
+    </div>
+    <div class="pad" aria-label="Direction controls">
+      <button class="u" data-d="U" aria-label="Up">▲</button><button class="l" data-d="L" aria-label="Left">◀</button><button class="d" data-d="D" aria-label="Down">▼</button><button class="r" data-d="R" aria-label="Right">▶</button>
+    </div>
+    <p class="hint">Arrow keys or WASD to steer, space to pause. Swipe on the board on a phone. No walls: edges wrap around.</p>
+  </section>
+
+  <section id="points" hidden>
+    <div class="card">
+      <h3>Your points</h3>
+      <div class="stats">
+        <div><small>Best score</small><strong id="pBest">0</strong></div>
+        <div><small>Last game</small><strong id="pLast">0</strong></div>
+        <div><small>Balls eaten</small><strong id="pBalls">0</strong></div>
+        <div><small>Games played</small><strong id="pGames">0</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Top 10 games</h3>
+      <ol class="lb" id="lb"></ol>
+      <p class="empty" id="lbEmpty">No games yet. Finish a round to get on the board.</p>
+    </div>
+  </section>
+
+  <section id="world" hidden>
+    <div class="card">
+      <h3>World leaderboard</h3>
+      <p class="empty" id="wStatus">Connecting…</p>
+      <ol class="lb" id="wlb"></ol>
+      <p class="hint" style="text-align:left">Each player's best score counts once. Scores update live.</p>
+    </div>
+  </section>
+
+  <section id="profile" hidden>
+    <div class="card">
+      <h3>Profile</h3>
+      <label for="nameIn">Player name</label>
+      <input type="text" id="nameIn" maxlength="14" autocomplete="off">
+      <label>Avatar</label>
+      <div class="opts" id="avOpts"></div>
+      <label>Snake color</label>
+      <div class="opts" id="colOpts"></div>
+      <label>Theme</label>
+      <div class="opts" style="gap:6px"><button class="btn" style="margin:0;padding:8px 16px;font-size:1rem" id="thBtn">Switch light / dark</button></div>
+      <button class="link" id="reset">Reset my points and stats</button>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+var N=20,S=20,cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var AV=['🐍','🐸','🦊','🐙','🐢','🦉'],COL=['#ffc83d','#7ee081','#7fd0ff','#ff9ad5','#f4efe1'];
+var DEF={profile:{name:'Player',avatar:'🐍',color:COL[0]},scores:[],stats:{games:0,eaten:0,best:0,last:0}};
+var data=load();
+function load(){try{var r=localStorage.getItem('snakeball_v1');if(r){var d=JSON.parse(r);return{profile:Object.assign({},DEF.profile,d.profile),scores:d.scores||[],stats:Object.assign({},DEF.stats,d.stats)}}}catch(e){}
+return JSON.parse(JSON.stringify(DEF))}
+function save(){try{localStorage.setItem('snakeball_v1',JSON.stringify(data))}catch(e){}}
+try{var t=localStorage.getItem('snakeball_theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+
+var $=function(i){return document.getElementById(i)};
+var V={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]};
+var g,timer,mode='preview'; // preview | play | paused | over
+
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function fresh(){g={snake:[{x:9,y:10},{x:8,y:10},{x:7,y:10}],dir:'R',next:'R',ball:null,gold:null,score:0,eaten:0};g.ball=spawn()}
+function spawn(){var p;do{p={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}while(g.snake.some(function(s){return s.x==p.x&&s.y==p.y}));return p}
+function level(){return 1+Math.floor(g.eaten/5)}
+function speed(){return mode=='preview'?90:Math.max(60,140-(level()-1)*10)}
+function run(){clearInterval(timer);timer=setInterval(tick,speed())}
+function w(n){return(n+N)%N}
+function td(a,b){var d=Math.abs(a-b);return Math.min(d,N-d)}
+function safe(x,y,body){return !body.some(function(s){return s.x==x&&s.y==y})}
+function ai(){var h=g.snake[0],best=null,bd=1e9,body=g.snake.slice(0,-1);
+ ['U','D','L','R'].forEach(function(k){var v=V[k],o=V[g.dir];if(v[0]==-o[0]&&v[1]==-o[1])return;
+  var x=w(h.x+v[0]),y=w(h.y+v[1]);if(!safe(x,y,body))return;var d=td(x,g.ball.x)+td(y,g.ball.y)+Math.random()*.4;if(d<bd){bd=d;best=k}});
+ return best||g.dir}
+function tick(){
+ if(mode=='preview')g.next=ai();
+ g.dir=g.next;var v=V[g.dir],h=g.snake[0],nx=w(h.x+v[0]),ny=w(h.y+v[1]);
+ var willEat=nx==g.ball.x&&ny==g.ball.y,body=willEat?g.snake:g.snake.slice(0,-1);
+ if(!safe(nx,ny,body)){if(mode=='preview'){fresh();return}return end()}
+ g.snake.unshift({x:nx,y:ny});
+ if(willEat){g.score++;g.eaten++;g.ball=spawn();hud();if(g.eaten%5==0&&mode=='play')run()}else g.snake.pop();
+ // gold ball bounces around the board
+ if(!g.gold&&g.score>=2&&Math.random()<.06){var p=spawn();g.gold={x:p.x,y:p.y,dx:Math.random()<.5?1:-1,dy:Math.random()<.5?1:-1,ttl:70}}
+ if(g.gold){var q=g.gold;q.ttl--;q.x+=q.dx;q.y+=q.dy;if(q.x<0||q.x>=N){q.dx*=-1;q.x+=2*q.dx}if(q.y<0||q.y>=N){q.dy*=-1;q.y+=2*q.dy}
+  if(g.snake.some(function(s){return s.x==q.x&&s.y==q.y})){g.score+=5;g.gold=null;hud()}else if(q.ttl<=0)g.gold=null}
+ draw()}
+function hud(){$('sc').textContent=g.score;$('lv').textContent=level();$('bs').textContent=Math.max(data.stats.best,mode=='play'?g.score:0)}
+function circle(x,y,r,c){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=c;ctx.fill()}
+function draw(){
+ for(var y=0;y<N;y++)for(var x=0;x<N;x++){ctx.fillStyle=(x+y)%2?css('--c1'):css('--c2');ctx.fillRect(x*S,y*S,S,S)}
+ var col=data.profile.color;
+ g.snake.forEach(function(s,i){var k=1-i/(g.snake.length+6)*.35;ctx.globalAlpha=k;circle(s.x*S+10,s.y*S+10,i?8.5:9.5,col);ctx.globalAlpha=1});
+ var h=g.snake[0],v=V[g.dir],px=-v[1],py=v[0];
+ [-1,1].forEach(function(s){var ex=h.x*S+10+v[0]*3+px*s*4,ey=h.y*S+10+v[1]*3+py*s*4;circle(ex,ey,2.6,'#fff');circle(ex+v[0],ey+v[1],1.3,'#12353a')});
+ var b=g.ball;circle(b.x*S+10,b.y*S+10,7.5,'#ff6b5e');circle(b.x*S+8,b.y*S+8,2.2,'rgba(255,255,255,.7)');
+ if(g.gold){var q=g.gold;ctx.globalAlpha=q.ttl<15&&q.ttl%2?.4:1;circle(q.x*S+10,q.y*S+10,9,'rgba(255,200,61,.35)');circle(q.x*S+10,q.y*S+10,6.5,'#ffc83d');circle(q.x*S+8,q.y*S+8,2,'#fff6c9');ctx.globalAlpha=1}}
+
+function overlay(kind){var o=$('ov');o.classList.remove('hide');
+ var map={preview:['Live preview','Snake & Ball','Eat the red balls. Walls are open: slip through one edge and come out the other. Catch the gold ball for 5.','Play'],
+ paused:['Paused','Take a breather','Your snake is waiting.','Resume'],
+ over:['Game over','Score: '+(g&&g.score),'','Play again']};
+ var m=map[kind];$('ovTag').textContent=m[0];$('ovTitle').textContent=m[1];$('ovTxt').textContent=m[2];$('go').textContent=m[3];$('ovTxt').style.display=m[2]?'':'none'}
+function start(){if(mode=='paused'){mode='play';$('ov').classList.add('hide');run();return}
+ mode='play';fresh();hud();$('ov').classList.add('hide');draw();run()}
+function pause(){if(mode!='play')return;mode='paused';clearInterval(timer);overlay('paused')}
+function end(){clearInterval(timer);mode='over';var st=data.stats;st.games++;st.eaten+=g.eaten;st.last=g.score;
+ var newBest=g.score>st.best;if(newBest)st.best=g.score;
+ if(g.score>0){data.scores.push({s:g.score,n:data.profile.name,a:data.profile.avatar,t:Date.now()});data.scores.sort(function(a,b){return b.s-a.s});data.scores=data.scores.slice(0,10)}
+ save();submitWorld();overlay('over');if(newBest&&g.score>0)$('ovTxt').textContent='New personal best!',$('ovTxt').style.display='';
+ hud();renderPoints()}
+function turn(k){if(mode!='play')return;var o=V[g.dir],v=V[k];if(v[0]==-o[0]&&v[1]==-o[1])return;g.next=k}
+
+$('go').onclick=function(){mode=='over'||mode=='preview'?(mode='idle',start()):start()};
+document.querySelectorAll('.pad button').forEach(function(b){b.onclick=function(){turn(b.dataset.d)}});
+addEventListener('keydown',function(e){var m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R'}[e.key];
+ if(e.key==' '&&!/INPUT|BUTTON/.test(document.activeElement.tagName)){e.preventDefault();mode=='play'?pause():mode=='paused'?start():0;return}
+ if(m&&!/INPUT/.test(document.activeElement.tagName)){e.preventDefault();turn(m)}});
+var tx,ty;var stage=document.querySelector('.stage');
+stage.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+stage.addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+ if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;turn(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'))},{passive:true});
+
+// tabs
+function showTab(n){if(n!='play')pause();
+ ['play','points','world','profile'].forEach(function(t){$(t).hidden=t!=n});
+ document.querySelectorAll('nav button').forEach(function(b){b.setAttribute('aria-selected',b.dataset.tab==n)});
+ if(n=='play'&&mode=='preview'){}}
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){showTab(b.dataset.tab)}});
+$('meBtn').onclick=function(){showTab('profile')};
+
+function renderPoints(){var s=data.stats;$('pBest').textContent=s.best;$('pLast').textContent=s.last;$('pBalls').textContent=s.eaten;$('pGames').textContent=s.games;
+ var lb=$('lb');lb.innerHTML='';$('lbEmpty').hidden=data.scores.length>0;
+ data.scores.forEach(function(r,i){var li=document.createElement('li');
+  li.innerHTML='<span class="rk">'+(i+1)+'</span><span>'+r.a+'</span><span class="nm"></span><span class="pt">'+r.s+'</span>';
+  li.querySelector('.nm').textContent=r.n;lb.appendChild(li)});
+ $('bs').textContent=s.best}
+function renderProfile(){var p=data.profile;$('meAv').textContent=p.avatar;$('meNm').textContent=p.name;
+ var a=$('avOpts');a.innerHTML='';AV.forEach(function(e){var b=document.createElement('button');b.textContent=e;b.setAttribute('aria-label','Avatar '+e);b.setAttribute('aria-pressed',e==p.avatar);b.onclick=function(){p.avatar=e;save();renderProfile()};a.appendChild(b)});
+ var c=$('colOpts');c.innerHTML='';COL.forEach(function(k){var b=document.createElement('button');b.className='sw';b.style.background=k;b.setAttribute('aria-label','Snake color '+k);b.setAttribute('aria-pressed',k==p.color);b.onclick=function(){p.color=k;save();renderProfile();if(g)draw()};c.appendChild(b)});}
+$('nameIn').value=data.profile.name;
+$('nameIn').oninput=function(){data.profile.name=this.value.trim()||'Player';save();$('meNm').textContent=data.profile.name};
+$('thBtn').onclick=function(){var cur=document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');var nx=cur=='dark'?'light':'dark';
+ document.documentElement.setAttribute('data-theme',nx);try{localStorage.setItem('snakeball_theme',nx)}catch(e){}if(g)draw()};
+$('reset').onclick=function(){if(!confirm('Reset your points and stats? Your name and avatar stay.'))return;data.scores=[];data.stats=JSON.parse(JSON.stringify(DEF.stats));save();renderPoints();hud()};
+
+var wdb=null,uid=null,wlist=[];
+function renderWorld(){var ol=$('wlb');ol.innerHTML='';wlist.forEach(function(d,i){var li=document.createElement('li');
+ li.innerHTML='<span class="rk">'+(i+1)+'</span><span class="av"></span><span class="nm"></span><span class="pt"></span>';
+ li.querySelector('.av').textContent=String(d.a||'🐍').slice(0,4);li.querySelector('.nm').textContent=(String(d.n||'Player').slice(0,14))+(d.id===uid?' (you)':'');
+ li.querySelector('.pt').textContent=Number(d.s)||0;if(d.id===uid)li.style.fontWeight='700';ol.appendChild(li)})}
+function submitWorld(){if(!wdb||!uid||g.score<=0)return;var ref=wdb.doc('world/'+uid);
+ ref.get().then(function(sn){var old=sn.exists?Number(sn.data().s)||0:0;
+  if(g.score>old)return ref.set({s:g.score,n:data.profile.name,a:data.profile.avatar,t:Date.now()})}).catch(function(){})}
+function syncWorld(){if(!wdb||!uid)return;var ref=wdb.doc('world/'+uid);
+ ref.get().then(function(sn){if(sn.exists){var d=sn.data();if(d.n!==data.profile.name||d.a!==data.profile.avatar)return ref.update({n:data.profile.name,a:data.profile.avatar})}}).catch(function(){})}
+var oldSave=save;save=function(){oldSave();clearTimeout(save.t);save.t=setTimeout(syncWorld,1200)};
+(async function(){try{
+ var u=await claude.use('user');var d=await claude.use('db');
+ if(!d||!u){$('wStatus').textContent='The world leaderboard is not available in this view. Your local scores still work.';return}
+ wdb=d;uid=await u.id();
+ d.collection('world').orderBy('s','desc').limit(20).onSnapshot(function(q){
+  wlist=q.docs.map(function(x){var o=Object.assign({},x.data());o.id=x.id;return o});
+  $('wStatus').hidden=wlist.length>0;$('wStatus').textContent='No world scores yet. Be the first.';renderWorld()},
+  function(){$('wStatus').hidden=false;$('wStatus').textContent='Could not load the world leaderboard right now.'})
+}catch(e){$('wStatus').textContent='The world leaderboard is not available in this view. Your local scores still work.'}})();
+
+fresh();renderProfile();renderPoints();draw();overlay('preview');run();
+})();
+</script>
+</body>
+</html>
